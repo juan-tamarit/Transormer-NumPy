@@ -1,7 +1,7 @@
 [project]
-name = "transformers"
+name = "transformers-numpy"
 version = "0.1.0"
-description = "Add your description here"
+description = "Decoder-only transformer built from scratch in NumPy, with hand-written backpropagation, to learn how it works inside"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
