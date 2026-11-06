@@ -15,12 +15,11 @@ def generate_qkv(rows: int, cols: int) -> dict:
     return res
 
 
-def embeding_matrix_qkv(fragment: list, embedding_matrix: np.array, W: dict) -> dict:
-    """Computes the Q, K, and V matrices for a given fragment of tokens using the provided embedding matrix and weight matrices."""
+def embeding_matrix_qkv(x:np.array, W: dict) -> dict:
+    """Computes the Q, K, and V matrices for the input x (token embeddings + possitions) using the wight matrices."""
     res = {}
-    fragment_embeding_matrix = embedding_matrix[fragment]
     for c in ["Q", "K", "V"]:
-        res[c] = fragment_embeding_matrix @ W[c]
+        res[c] = x @ W[c]
     return res
 
 
@@ -55,10 +54,10 @@ def create_casual_mask(size: int) -> np.array:
     return mask
 
 
-def attention_forward(embedding_matrix: np.array, fragment: list, W: dict, heads: int) -> tuple:
-    """Computes the attention output for a given fragment of tokens using the provided embedding matrix and weight matrices."""
-    heads_dim = embedding_matrix.shape[1] // heads
-    qkt = embeding_matrix_qkv(fragment, embedding_matrix, W)
+def attention_forward(x:np.array, W: dict, heads: int) -> tuple:
+    """Computes the attention output for the input x (token embeddings + positions) using the weight matrices."""
+    heads_dim = x.shape[1] // heads
+    qkt = embeding_matrix_qkv(x, W)
 
     # Split heads for multi-head attention
     qkt["Q"] = split_heads(qkt["Q"], heads, heads_dim)
@@ -66,7 +65,7 @@ def attention_forward(embedding_matrix: np.array, fragment: list, W: dict, heads
     qkt["V"] = split_heads(qkt["V"], heads, heads_dim)
     # Compute similarity scores and apply causal mask
     similarity_qk = similarity_score(qkt["Q"], qkt["K"], heads_dim)
-    casual_mask = create_casual_mask(len(fragment))
+    casual_mask = create_casual_mask(x.shape[0])
     similarity_qk += casual_mask
     # Apply softmax to obtain attention weights and compute the final attention output
     attention_weights = softmax(similarity_qk)
@@ -76,14 +75,13 @@ def attention_forward(embedding_matrix: np.array, fragment: list, W: dict, heads
     return attention, attention_weights
 
 
-def backward_attention(d_attention: np.array, embedding_matrix: np.array, attention_weights: np.array,
-                        fragment: list, W: dict, heads: int, learning_rate: float) -> tuple:
-    """Calculates gradients for the Multi-Head Attention layer, updates W (Q, K, V) and embedding_matrix."""
-    seq_len = len(fragment)
-    embedding_dim = embedding_matrix.shape[1]
+def backward_attention(d_attention: np.array,x: np.array, attention_weights: np.array,
+                        W: dict, heads: int, learning_rate: float) -> tuple:
+    """Calculates gradients for the Multi-Head Attention layer, updates W (Q, K, V) and retunrs the gradient witch respect to x."""
+    seq_len,embedding_dim= x.shape[0]
     heads_dim = embedding_dim // heads
     fragment_embedding = embedding_matrix[fragment]
-    qkv = embeding_matrix_qkv(fragment, embedding_matrix, W)
+    qkv = embeding_matrix_qkv(x, W)
 
     Q = split_heads(qkv["Q"], heads, heads_dim)
     K = split_heads(qkv["K"], heads, heads_dim)
@@ -106,16 +104,14 @@ def backward_attention(d_attention: np.array, embedding_matrix: np.array, attent
     dV_full = d_V.transpose(1, 0, 2).reshape(seq_len, embedding_dim)
 
     dW = {
-        "Q": fragment_embedding.T @ dQ_full,
-        "K": fragment_embedding.T @ dK_full,
-        "V": fragment_embedding.T @ dV_full
+        "Q": x.T @ dQ_full,
+        "K": x.T @ dK_full,
+        "V": x.T @ dV_full
     }
 
-    d_embedding_fragment = (dQ_full @ W["Q"].T) + (dK_full @ W["K"].T) + (dV_full @ W["V"].T)
+    d_x = (dQ_full @ W["Q"].T) + (dK_full @ W["K"].T) + (dV_full @ W["V"].T)
 
     for c in ["Q", "K", "V"]:
         W[c] -= learning_rate * dW[c]
 
-    np.add.at(embedding_matrix, fragment, -learning_rate * d_embedding_fragment)
-
-    return W, embedding_matrix
+    return W, d_x
