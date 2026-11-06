@@ -15,8 +15,8 @@ def main():
         for f in os.listdir(data_folder):
             if f.endswith(".txt"):
                 path = os.path.join(data_folder, f)
-                print(f"Entrenando con: {path}")
-                transformer.train(path)
+                loss=transformer.train(path)
+                print(f"Epoch: {epoch} | loss: {loss}")
     # Llamada directa con un string
     resultado = transformer.predict("en un lugar", max_length=10)
 
