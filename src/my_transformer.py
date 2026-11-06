@@ -8,7 +8,7 @@ from attention import softmax
 
 def positional_encoding(seq_len:int,embedding_dim:int)->np.array:
     """Sinusoidal positional encoding: without it, attention cannot tell word order apart."""
-    positions=np.arange(seq_len)[:None],
+    positions=np.arange(seq_len)[:,None]
     freqs =1 / 10000**(np.arange(0,embedding_dim,2)/embedding_dim)
     pe=np.zeros((seq_len,embedding_dim))
     pe[:,0::2]=np.sin(positions*freqs)

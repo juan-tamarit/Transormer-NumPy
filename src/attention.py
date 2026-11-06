@@ -78,9 +78,8 @@ def attention_forward(x:np.array, W: dict, heads: int) -> tuple:
 def backward_attention(d_attention: np.array,x: np.array, attention_weights: np.array,
                         W: dict, heads: int, learning_rate: float) -> tuple:
     """Calculates gradients for the Multi-Head Attention layer, updates W (Q, K, V) and retunrs the gradient witch respect to x."""
-    seq_len,embedding_dim= x.shape[0]
+    seq_len,embedding_dim= x.shape
     heads_dim = embedding_dim // heads
-    fragment_embedding = embedding_matrix[fragment]
     qkv = embeding_matrix_qkv(x, W)
 
     Q = split_heads(qkv["Q"], heads, heads_dim)
