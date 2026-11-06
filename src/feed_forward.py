@@ -8,7 +8,7 @@ def relu(matrix: np.array) -> np.array:
 
 def feed_forward(attention_matrix: np.array, expansion_matrix: np.array, compresion_matrix: np.array) -> np.array:
     """Applies a feed-forward neural network to the attention output using ReLU activation."""
-    # We are ussing relu as the activation function because it is common and cheap to implement, Gelu is giving better results but is more expensive to compute.
+    # We are using relu as the activation function because it is common and cheap to implement, Gelu usually gives better results but is more expensive to compute.
     attention_relu = relu(attention_matrix @ expansion_matrix) @ compresion_matrix
     return attention_relu
 

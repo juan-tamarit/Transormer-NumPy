@@ -46,7 +46,7 @@ class my_transformer():
         return logits,(x,attention_weights,h,final_output)
 
     def train_step(self,fragment:list,target:list)->float:
-        """Runs forward and barward on one fragment, updates the weights and returns the loss"""
+        """Runs forward and backward on one fragment, updates the weights and returns the loss"""
         logits,(x,attention_weights,h,final_output)=self.forward(fragment)
         loss = cross_entropy_loss(softmax(logits), target)
 
